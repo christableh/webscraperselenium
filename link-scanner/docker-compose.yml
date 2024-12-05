@@ -1,0 +1,88 @@
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: link-scanner-app
+    ports:
+      - "3001:3001" # React
+      - "3002:3002" # Express Backend
+      - "3003:3003" # Docs
+    environment:
+      PYTHONUNBUFFERED: 1
+    volumes:
+      - ./python_scripts:/app/python_scripts
+      - ./react:/app/react
+      - ./express:/app/express
+      - ./docs:/app/docs
+    command: >
+      npx concurrently
+      "serve -s /app/react/build --listen 3001" \
+      "node /app/express/server.js --port 3002" \
+      "serve -s /app/docs/build --listen 3003"
+    shm_size: "2g" # Increase shared memory for Python execution
+
+
+# services:
+#   selenium-hub:
+#     image: selenium/hub:latest
+#     platform: linux/amd64
+#     container_name: selenium-hub
+#     ports:
+#       - "4444:4444"
+#     networks:
+#       - selenium-grid
+#     environment:
+#       - SE_OPENTELEMETRY_TRACING_ENABLED=false
+#       - OTEL_TRACES_EXPORTER=none
+#       - OTEL_METRICS_EXPORTER=none
+#       - SE_SESSION_TIMEOUT=6000000      # Session timeout
+#       - SE_SESSION_REQUEST_TIMEOUT=6000000
+
+#   chrome:
+#     image: selenium/node-chrome:latest
+#     platform: linux/amd64
+#     container_name: chrome
+#     shm_size: 4gb
+#     networks:
+#       - selenium-grid
+#     environment:
+#       - SE_EVENT_BUS_HOST=selenium-hub
+#       - SE_EVENT_BUS_PUBLISH_PORT=4442
+#       - SE_EVENT_BUS_SUBSCRIBE_PORT=4443
+#       - SE_OPENTELEMETRY_TRACING_ENABLED=false
+#       - OTEL_TRACES_EXPORTER=none
+#       - OTEL_METRICS_EXPORTER=none
+#       - SE_SESSION_TIMEOUT=6000000      # Session timeout
+#       - SE_SESSION_REQUEST_TIMEOUT=6000000  # Request timeout
+#       - SE_NODE_SESSION_TIMEOUT=6000000
+#       - SE_NODE_MAX_SESSIONS=1
+
+#     depends_on:
+#       - selenium-hub
+
+#   link-scanner-app:
+#     build:
+#       context: .
+#     container_name: link-scanner-app
+#     ports:
+#       - "3001:3001"  # React
+#       - "3002:3002"  # Express
+#       - "3003:3003"  # docs
+#     volumes:
+#       - ./python_scripts:/app/python_scripts  # Mount Python scripts directory
+#     networks:
+#       - selenium-grid
+#     depends_on:
+#       - selenium-hub
+#       - chrome
+#     environment:
+#       - PYTHONUNBUFFERED=1
+#     command: >
+#       sh -c "npx concurrently \"serve -s /app/react/build --listen 3001\" \"node /app/express/server.js\" \"npx serve /app/docs/build --listen 3003\""
+      
+# networks:
+#   selenium-grid:
+#     driver: bridge
+
+
